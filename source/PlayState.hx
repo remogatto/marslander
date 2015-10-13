@@ -35,8 +35,7 @@ class PlayState extends FlxNapeState
   private inline static var NUM_CRATES = 1;
   public static var crateJoint:DistanceJoint;
   public static var CB_CRATE:CbType = new CbType();
-  public static var CB_TERRAIN:CbType = new CbType();
-  var terrainSprite:FlxSprite;
+  var terrain:Terrain;
   var listCrates:Array<Crate>;
   var camera:FlxCamera;
   /**
@@ -51,9 +50,12 @@ class PlayState extends FlxNapeState
     FlxG.plugins.add(new MouseEventManager());
 
     FlxNapeState.space.gravity.setxy(0, 500);
-    napeDebugEnabled = false;
+    napeDebugEnabled = true;
     createWalls(0, -1000, FlxG.width*3, FlxG.height);
-    createTerrain(FlxG.width*3, FlxG.height);
+
+    terrain = new Terrain(FlxG.width*3, FlxG.height);
+    add(terrain.sprite);
+
     createCrates();
     FlxG.camera.follow(listCrates[0], FlxCamera.STYLE_TOPDOWN, 1);
   }
@@ -99,72 +101,6 @@ class PlayState extends FlxNapeState
     if (FlxG.keys.justPressed.R) {
       FlxG.resetState();
     }
-  }
-
-  function createTerrain(width:Int, height:Int)
-  {
-    var terrain = new Body(BodyType.STATIC);
-    var _Material = new Material(0.4, 0.2, 0.38, 0.7);
-
-    var va = generatePoints(width, height);
-
-    var vl = new Vec2List();
-    vl = Vec2List.fromArray(va);
-    vl.add(new Vec2(0, height));
-    vl.add(new Vec2(width, height));
-
-    var geomPoly = new GeomPoly(vl);
-    var geomPolyList = geomPoly.convexDecomposition();
-
-    geomPolyList.foreach(function(gp) {
-      terrain.shapes.add(new Polygon(gp));
-    });
-
-    terrain.space = FlxNapeState.space;
-    terrain.setShapeMaterials(_Material);
-
-    terrainSprite = new FlxSprite(0, 0);
-    terrainSprite.makeGraphic(width, height, 0xffffffff);
-    FlxSpriteUtil.fill(terrainSprite, 0xff000000);
-
-    for (i in 0...va.length-1)
-    {
-      var v1 = va[i];
-      var v2 = va[i+1];
-      FlxSpriteUtil.drawLine(terrainSprite, v1.x, v1.y, v2.x, v2.y, {color: FlxColor.WHITE, thickness: 1});
-    }
-
-    add(terrainSprite);
-  }
-
-  function generatePoints(width:Int, height:Int):Array<Vec2>
-  {
-    var iterations = 5;
-    var displacement = height*0.5;
-    var roughness = 0.8;
-    var points:Array<Vec2> = new Array<Vec2>();
-    var temp:Array<Vec2> = new Array<Vec2>();
-
-    points.push(new Vec2(0, height));
-    points.push(new Vec2(width, height));
-
-    for (i in 0...iterations-1) {
-      temp = new Array<Vec2>();
-      var j = 0;
-      while (j < points.length - 1) {
-        var p1 = points[j];
-        var p2 = points[j+1];
-        var mid = new Vec2((p1.x+p2.x)/2, (p1.y+p2.y)/2);
-        mid.y += FlxRandom.floatRanged(-displacement, 0);
-        temp.push(p1);
-        temp.push(mid);
-        j++;
-      }
-      temp.push(points[points.length - 1]);
-      displacement *= roughness;
-      points = temp;
-    }
-    return points;
   }
 
   function createCrates()
