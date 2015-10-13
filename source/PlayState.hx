@@ -49,8 +49,8 @@ class PlayState extends FlxNapeState
     // Important to set this up before createCrates()
     FlxG.plugins.add(new MouseEventManager());
 
-    FlxNapeState.space.gravity.setxy(0, 500);
-    napeDebugEnabled = true;
+    FlxNapeState.space.gravity.setxy(0, 300);
+    napeDebugEnabled = false;
     createWalls(0, -1000, FlxG.width*3, FlxG.height);
 
     terrain = new Terrain(FlxG.width*3, FlxG.height);

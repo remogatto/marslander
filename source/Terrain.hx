@@ -5,6 +5,7 @@ import flixel.text.FlxText;
 import flixel.ui.FlxButton;
 import flixel.util.FlxMath;
 import flixel.util.FlxColor;
+import flixel.util.FlxPoint;
 import flixel.addons.nape.FlxNapeState;
 import flixel.addons.nape.FlxNapeSprite;
 import nape.shape.Polygon;
@@ -50,11 +51,19 @@ class Terrain
     sprite.makeGraphic(width, height, 0xffffffff);
     FlxSpriteUtil.fill(sprite, 0xff000000);
 
+    va.push(new Vec2(0, height));
+
+    // var points = new Array<FlxPoint>();
+    // for (v in va) {
+    //   points.push(new FlxPoint(v.x, v.y));
+    // }
+    // FlxSpriteUtil.drawPolygon(sprite, points, FlxColor.WHITE, {color: FlxColor.WHITE, thickness: 2});
+
     for (i in 0...va.length-1)
     {
       var v1 = va[i];
       var v2 = va[i+1];
-      FlxSpriteUtil.drawLine(sprite, v1.x, v1.y, v2.x, v2.y, {color: FlxColor.WHITE, thickness: 1});
+      FlxSpriteUtil.drawLine(sprite, v1.x, v1.y, v2.x, v2.y, {color: FlxColor.WHITE, thickness: 2});
     }
 
   }

@@ -24,15 +24,15 @@ class Crate extends FlxNapeSprite
   public function new(X:Int, Y:Int)
   {
     super(X, Y);
-    loadGraphic("assets/images/spaceship.png", true, 100, 100);
+    loadGraphic("assets/images/lander.png", true, 32, 32);
 
     this.animation.frameIndex = FlxRandom.intRanged(0, 6);
 
     antialiasing = true;
 
-    createRectangularBody(100, 100);
+    createRectangularBody(32, 32);
 
-    var box = new Polygon(Polygon.box(100, 100));
+    var box = new Polygon(Polygon.box(32, 32));
 
     box.material = new Material(0.2, 1.0, 1.4, 0.1, 0.01);
     box.filter.collisionGroup = 256;
