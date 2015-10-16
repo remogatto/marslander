@@ -19,7 +19,7 @@ import nape.constraint.DistanceJoint;
 import flixel.util.FlxRandom;
 import flixel.plugin.MouseEventManager;
 
-class Crate extends FlxNapeSprite
+class Lander extends FlxNapeSprite
 {
   public function new(X:Int, Y:Int)
   {
@@ -43,25 +43,12 @@ class Crate extends FlxNapeSprite
 
     body.shapes.at(0).material.density = .5;
     body.shapes.at(0).material.dynamicFriction = 0;
-
-    MouseEventManager.add(this, onMouseDown);
   }
-
 
   public function onCollide()
   {
     body.shapes.pop();
     animation.frameIndex += 7;
-  }
-
-  function onMouseDown(sprite:FlxSprite)
-  {
-    PlayState.crateJoint = new DistanceJoint(FlxNapeState.space.world, body, Vec2.weak(FlxG.mouse.x, FlxG.mouse.y),
-    body.worldPointToLocal(Vec2.weak(FlxG.mouse.x, FlxG.mouse.y)), 0, 0);
-    PlayState.crateJoint.stiff = false;
-    PlayState.crateJoint.damping = 1;
-    PlayState.crateJoint.frequency = 2;
-    PlayState.crateJoint.space = FlxNapeState.space;
   }
 
 }

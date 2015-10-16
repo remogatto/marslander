@@ -1,3 +1,4 @@
+import haxe.ds.Vector;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.FlxState;
@@ -23,19 +24,39 @@ import flixel.plugin.MouseEventManager;
 import flixel.util.FlxSpriteUtil;
 import flash.display.Graphics;
 
+class LandingSite
+{
+  public var a:Vec2;
+  public var b:Vec2;
+  public function new(x1:Float, y1:Float, x2:Float, y2:Float)
+  {
+    a = new Vec2(x1, y1);
+    b = new Vec2(x2, y2);
+  }
+}
+
 class Terrain
 {
+  private var iterations = 6;
   public var sprite:FlxSprite;
+  public var landingSites:Array<LandingSite>;
+
   public function new(width:Int, height:Int)
   {
     var terrainBody = new Body(BodyType.STATIC);
     var material = new Material(0.4, 0.2, 0.38, 0.7);
-    var va = generate(width, height);
+    var va = new Array<Vec2>();
+
+    va = generate(0, height, Std.int(width/2), height, height/3);
+    va.pop();
+    va = va.concat(generate(Std.int(width/2), height-10, width, height, height/2));
+    va.push(new Vec2(width, height));
+    va.push(new Vec2(0, height));
+
+    landingSites = generateLandingSites(va);
 
     var vl = new Vec2List();
     vl = Vec2List.fromArray(va);
-    vl.add(new Vec2(0, height));
-    vl.add(new Vec2(width, height));
 
     var geomPoly = new GeomPoly(vl);
     var geomPolyList = geomPoly.convexDecomposition();
@@ -51,15 +72,7 @@ class Terrain
     sprite.makeGraphic(width, height, 0xffffffff);
     FlxSpriteUtil.fill(sprite, 0xff000000);
 
-    va.push(new Vec2(0, height));
-
-    // var points = new Array<FlxPoint>();
-    // for (v in va) {
-    //   points.push(new FlxPoint(v.x, v.y));
-    // }
-    // FlxSpriteUtil.drawPolygon(sprite, points, FlxColor.WHITE, {color: FlxColor.WHITE, thickness: 2});
-
-    for (i in 0...va.length-1)
+    for (i in 0...va.length-2)
     {
       var v1 = va[i];
       var v2 = va[i+1];
@@ -68,17 +81,15 @@ class Terrain
 
   }
 
-
-  function generate(width:Int, height:Int):Array<Vec2>
+  function generate(x0:Int, y0:Int, x1:Int, y1:Int, displacement:Float):Array<Vec2>
   {
-    var iterations = 5;
-    var displacement = height*0.5;
-    var roughness = 0.8;
+    var roughness = 0.6;
+
     var points:Array<Vec2> = new Array<Vec2>();
     var temp:Array<Vec2> = new Array<Vec2>();
 
-    points.push(new Vec2(0, height));
-    points.push(new Vec2(width, height));
+    points.push(new Vec2(x0, y0));
+    points.push(new Vec2(x1, y1));
 
     for (i in 0...iterations-1) {
       temp = new Array<Vec2>();
@@ -87,7 +98,7 @@ class Terrain
         var p1 = points[j];
         var p2 = points[j+1];
         var mid = new Vec2((p1.x+p2.x)/2, (p1.y+p2.y)/2);
-        mid.y += FlxRandom.floatRanged(-displacement, 0);
+        mid.y += FlxRandom.floatRanged(-displacement, -displacement*0.5);
         temp.push(p1);
         temp.push(mid);
         j++;
@@ -97,6 +108,20 @@ class Terrain
       points = temp;
     }
     return points;
+  }
+
+  function generateLandingSites(points:Array<Vec2>):Array<LandingSite>
+  {
+    var landingSites = new Array<LandingSite>();
+    var width = points.length;
+    var lId0 = FlxRandom.intRanged(5, points.length-5);
+    var lId1 = lId0+iterations-2;
+    var ly = points[lId0].y;
+    for (i in 0...iterations-1) {
+      points[lId0+i].y = ly;
+    }
+    landingSites.push(new LandingSite(points[lId0].x, points[lId0].y, points[lId1].x, points[lId1].y));
+    return landingSites;
   }
 
 }
