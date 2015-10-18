@@ -1,6 +1,5 @@
 package;
 
-import haxe.ds.Vector;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.FlxState;
@@ -54,7 +53,7 @@ class PlayState extends FlxNapeState
     // Important to set this up before createCrates()
     FlxG.plugins.add(new MouseEventManager());
 
-    FlxNapeState.space.gravity.setxy(0, 100);
+    FlxNapeState.space.gravity.setxy(0, 50);
     napeDebugEnabled = false;
     createWalls(0, -1000, FlxG.width*3, FlxG.height);
 
@@ -72,7 +71,7 @@ class PlayState extends FlxNapeState
       add(text);
     }
 
-    _emitter = new FlxEmitterExt(10, FlxG.height / 2, 500);
+    _emitter = new FlxEmitterExt(10, FlxG.height / 2, 10);
     add(_emitter);
 
     // Now it's almost ready to use, but first we need to give it some pixels to spit out!
@@ -90,7 +89,7 @@ class PlayState extends FlxNapeState
       _emitter.add(_whitePixel);
     }
 
-    _emitter.angle = 90;
+    _emitter.angle = Math.PI/2;
     _emitter.angleRange = 0.15;
     _emitter.setAlpha(1, 1, 0, 0);
   }
@@ -118,6 +117,9 @@ class PlayState extends FlxNapeState
     flame = flame.add(new Vec2(midpoint.x, midpoint.y));
     _emitter.setPosition(flame.x, flame.y);
 
+    _emitter.angle = FlxAngle.asRadians(90+lander.angle);
+
+
     // Input handling
     if (FlxG.keys.justPressed.G) {
       napeDebugEnabled = !napeDebugEnabled;
@@ -128,7 +130,7 @@ class PlayState extends FlxNapeState
     }
 
     if (FlxG.keys.pressed.SPACE || FlxG.mouse.pressed) {
-      var v = new Vec2(0, -10);
+      var v = new Vec2(0, -3);
       v.rotate(lander.body.rotation);
       lander.body.applyImpulse(v);
       _emitter.start(false, 0.3, 0.01);
