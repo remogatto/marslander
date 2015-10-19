@@ -7,6 +7,7 @@ import flixel.text.FlxText;
 import flixel.ui.FlxButton;
 import flixel.util.FlxMath;
 import flixel.addons.nape.FlxNapeState;
+import flixel.addons.display.FlxZoomCamera;
 import flixel.util.FlxRandom;
 import flixel.plugin.MouseEventManager;
 import flixel.util.FlxSpriteUtil;
@@ -38,7 +39,9 @@ class PlayState extends FlxNapeState
   public static var CB_CRATE:CbType = new CbType();
   var terrain:Terrain;
   var lander:Lander;
-  var camera:FlxCamera;
+  var followCamera:FlxCamera;
+  var defCamera:FlxCamera;
+  var follow:Bool = false;
   private var _emitter:FlxEmitterExt;
   private var _whitePixel:FlxParticle;
 
@@ -55,15 +58,13 @@ class PlayState extends FlxNapeState
 
     FlxNapeState.space.gravity.setxy(0, 50);
     napeDebugEnabled = false;
-    createWalls(0, -1000, FlxG.width*3, FlxG.height);
+    createWalls(0, -1000, FlxG.width, FlxG.height);
 
-    terrain = new Terrain(FlxG.width*3, FlxG.height);
+    terrain = new Terrain(FlxG.width, FlxG.height);
     add(terrain.sprite);
 
-    lander = new Lander(Std.int(FlxG.width*3/2), 0);
+    lander = new Lander(Std.int(FlxG.width/2), 0);
     add(lander);
-
-    FlxG.camera.follow(lander, FlxCamera.STYLE_TOPDOWN, 1);
 
     for (l in terrain.landingSites)
     {
@@ -92,6 +93,8 @@ class PlayState extends FlxNapeState
     _emitter.angle = Math.PI/2;
     _emitter.angleRange = 0.15;
     _emitter.setAlpha(1, 1, 0, 0);
+
+    defCamera = FlxG.camera;
   }
 
   /**
@@ -119,6 +122,23 @@ class PlayState extends FlxNapeState
 
     _emitter.angle = FlxAngle.asRadians(90+lander.angle);
 
+
+    for (l in terrain.landingSites) {
+      if (l.a.y-lander.y < 100) {
+        if (!follow) {
+          followCamera = new FlxZoomCamera(Std.int(FlxG.camera.x), Std.int(FlxG.camera.y), Std.int(FlxG.camera.width), Std.int(FlxG.camera.height), 2);
+          followCamera.follow(lander, FlxCamera.STYLE_TOPDOWN, null, 5);
+          FlxG.cameras.reset(followCamera);
+          follow = true;
+        }
+      }
+      else {
+        if (follow) {
+          FlxG.cameras.reset();
+          follow = false;
+        }
+      }
+    }
 
     // Input handling
     if (FlxG.keys.justPressed.G) {
@@ -151,7 +171,8 @@ class PlayState extends FlxNapeState
     #if mobile
     if (FlxG.accelerometer.isSupported)
     {
-      lander.body.rotation = -FlxG.accelerometer.x;
+      lander.body.rotation = -Math.ceil(FlxG.accelerometer.x*10)/10;
+      trace(lander.body.rotation);
     }
     #end
 
