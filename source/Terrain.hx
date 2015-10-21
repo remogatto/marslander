@@ -37,23 +37,22 @@ class LandingSite
 
 class Terrain
 {
-  private var iterations = 6;
   public var sprite:FlxSprite;
   public var landingSites:Array<LandingSite>;
 
-  public function new(width:Int, height:Int)
+  public function new(width:Int, height:Int, ?roughness:Float = 0.6, ?iterations:Int = 6)
   {
     var terrainBody = new Body(BodyType.STATIC);
     var material = new Material(0.4, 0.2, 0.38, 0.7);
     var va = new Array<Vec2>();
 
-    va = generate(0, height, Std.int(width/2), height, height/3);
+    va = generate(0, height, Std.int(width/2), height, height/3, roughness, iterations);
     va.pop();
-    va = va.concat(generate(Std.int(width/2), height-10, width, height, height/2));
+    va = va.concat(generate(Std.int(width/2), height-10, width, height, height/2, roughness, iterations));
     va.push(new Vec2(width, height));
     va.push(new Vec2(0, height));
 
-    landingSites = generateLandingSites(va);
+    landingSites = generateLandingSites(va, iterations);
 
     var vl = new Vec2List();
     vl = Vec2List.fromArray(va);
@@ -81,10 +80,8 @@ class Terrain
 
   }
 
-  function generate(x0:Int, y0:Int, x1:Int, y1:Int, displacement:Float):Array<Vec2>
+  function generate(x0:Int, y0:Int, x1:Int, y1:Int, displacement:Float, ?roughness:Float = 0.6, ?iterations:Int = 6):Array<Vec2>
   {
-    var roughness = 0.6;
-
     var points:Array<Vec2> = new Array<Vec2>();
     var temp:Array<Vec2> = new Array<Vec2>();
 
@@ -110,7 +107,7 @@ class Terrain
     return points;
   }
 
-  function generateLandingSites(points:Array<Vec2>):Array<LandingSite>
+  function generateLandingSites(points:Array<Vec2>, iterations:Int):Array<LandingSite>
   {
     var landingSites = new Array<LandingSite>();
     var width = points.length;

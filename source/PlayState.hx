@@ -4,12 +4,10 @@ import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.FlxState;
 import flixel.text.FlxText;
-import flixel.ui.FlxButton;
 import flixel.util.FlxMath;
 import flixel.addons.nape.FlxNapeState;
 import flixel.addons.display.FlxZoomCamera;
 import flixel.util.FlxRandom;
-import flixel.plugin.MouseEventManager;
 import flixel.util.FlxSpriteUtil;
 import flixel.util.FlxColor;
 import flixel.util.FlxRandom;
@@ -26,24 +24,19 @@ import nape.geom.Vec2List;
 import nape.phys.Body;
 import nape.phys.BodyType;
 import nape.phys.Material;
-import nape.callbacks.CbType;
-import nape.constraint.DistanceJoint;
-import flash.geom.Rectangle;
-import flash.geom.Point;
 
 /**
 * A FlxState which can be used for the actual gameplay.
 */
 class PlayState extends FlxNapeState
 {
-  public static var CB_CRATE:CbType = new CbType();
+  public static inline var TERRAIN_ITERATIONS = 6;
+  public static inline var TERRAIN_ROUGHNESS = 0.6;
   var terrain:Terrain;
   var lander:Lander;
   var followCamera:FlxCamera;
   var defCamera:FlxCamera;
   var follow:Bool = false;
-  private var _emitter:FlxEmitterExt;
-  private var _whitePixel:FlxParticle;
 
   /**
   * Function that is called up when to state is created to set it up.
@@ -52,19 +45,12 @@ class PlayState extends FlxNapeState
   {
     super.create();
 
-    // We need the MouseEventManager plugin for sprite-mouse-interaction
-    // Important to set this up before createCrates()
-    FlxG.plugins.add(new MouseEventManager());
-
     FlxNapeState.space.gravity.setxy(0, 50);
     napeDebugEnabled = false;
-    createWalls(0, -1000, FlxG.width, FlxG.height);
+    createWalls(0, -1000, FlxG.width*3, FlxG.height);
 
-    terrain = new Terrain(FlxG.width, FlxG.height);
-    add(terrain.sprite);
-
-    lander = new Lander(Std.int(FlxG.width/2), 0);
-    add(lander);
+    terrain = createTerrain(FlxG.width*3, FlxG.height);
+    lander = createLander(Std.int(FlxG.width/2), 0);
 
     for (l in terrain.landingSites)
     {
@@ -72,29 +58,7 @@ class PlayState extends FlxNapeState
       add(text);
     }
 
-    _emitter = new FlxEmitterExt(10, FlxG.height / 2, 10);
-    add(_emitter);
-
-    // Now it's almost ready to use, but first we need to give it some pixels to spit out!
-    // Lets fill the emitter with some white pixels
-    for (i in 0...(Std.int(_emitter.maxSize / 2)))
-    {
-      _whitePixel = new FlxParticle();
-      _whitePixel.makeGraphic(3, 3, FlxColor.RED);
-      // Make sure the particle doesn't show up at (0, 0)
-      _whitePixel.visible = false;
-      _emitter.add(_whitePixel);
-      _whitePixel = new FlxParticle();
-      _whitePixel.makeGraphic(5, 5, FlxColor.RED);
-      _whitePixel.visible = false;
-      _emitter.add(_whitePixel);
-    }
-
-    _emitter.angle = Math.PI/2;
-    _emitter.angleRange = 0.15;
-    _emitter.setAlpha(1, 1, 0, 0);
-
-    defCamera = FlxG.camera;
+    FlxG.camera.follow(lander, FlxCamera.STYLE_TOPDOWN, 1);
   }
 
   /**
@@ -118,9 +82,8 @@ class PlayState extends FlxNapeState
     flame.rotate(FlxAngle.asRadians(lander.angle));
 
     flame = flame.add(new Vec2(midpoint.x, midpoint.y));
-    _emitter.setPosition(flame.x, flame.y);
-
-    _emitter.angle = FlxAngle.asRadians(90+lander.angle);
+    lander.emitter.setPosition(flame.x, flame.y);
+    lander.emitter.angle = FlxAngle.asRadians(90+lander.angle);
 
 
     for (l in terrain.landingSites) {
@@ -153,11 +116,11 @@ class PlayState extends FlxNapeState
       var v = new Vec2(0, -3);
       v.rotate(lander.body.rotation);
       lander.body.applyImpulse(v);
-      _emitter.start(false, 0.3, 0.01);
+      lander.emitter.start(false, 0.3, 0.01);
     }
 
     if (FlxG.keys.justReleased.SPACE || FlxG.mouse.justReleased) {
-      _emitter.start(false, 100, 100);
+      lander.emitter.start(false, 100, 100);
     }
 
     if (FlxG.keys.pressed.RIGHT) {
@@ -172,10 +135,22 @@ class PlayState extends FlxNapeState
     if (FlxG.accelerometer.isSupported)
     {
       lander.body.rotation = -Math.ceil(FlxG.accelerometer.x*10)/10;
-      trace(lander.body.rotation);
     }
     #end
 
+  }
+
+  function createLander(x:Int, y:Int):Lander {
+    var lander = new Lander(x, y);
+    add(lander);
+    add(lander.emitter);
+    return lander;
+  }
+
+  function createTerrain(width:Int, height:Int):Terrain {
+    var terrain = new Terrain(FlxG.width*3, FlxG.height, TERRAIN_ROUGHNESS, TERRAIN_ITERATIONS);
+    add(terrain.sprite);
+    return terrain;
   }
 
 }

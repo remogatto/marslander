@@ -1,34 +1,23 @@
 package;
 
-import flixel.FlxG;
-import flixel.FlxSprite;
-import flixel.FlxState;
-import flixel.text.FlxText;
-import flixel.ui.FlxButton;
-import flixel.util.FlxMath;
-import flixel.addons.nape.FlxNapeState;
+import flixel.effects.particles.FlxEmitterExt;
+import flixel.effects.particles.FlxParticle;
+import flixel.util.FlxRandom;
+import flixel.util.FlxColor;
 import flixel.addons.nape.FlxNapeSprite;
 import nape.shape.Polygon;
-import nape.shape.Shape;
-import nape.geom.Vec2;
-import nape.phys.Body;
-import nape.phys.BodyType;
 import nape.phys.Material;
-import nape.callbacks.CbType;
-import nape.constraint.DistanceJoint;
-import flixel.util.FlxRandom;
-import flixel.plugin.MouseEventManager;
 
 class Lander extends FlxNapeSprite
 {
+  public var emitter:FlxEmitterExt;
   public function new(X:Int, Y:Int)
   {
     super(X, Y);
-    loadGraphic("assets/images/lander.png", true, 32, 32);
+    loadGraphic("assets/images/mars_lander.png", true, 32, 32);
 
-    this.animation.frameIndex = FlxRandom.intRanged(0, 6);
-
-    antialiasing = true;
+    // this.animation.frameIndex = FlxRandom.intRanged(0, 6);
+    this.antialiasing = false;
 
     createRectangularBody(32, 32);
 
@@ -38,17 +27,32 @@ class Lander extends FlxNapeSprite
     box.filter.collisionGroup = 256;
 
     body.shapes.add(box);
-    body.cbTypes.add(PlayState.CB_CRATE);
-    body.userData.data = this;
+    // body.userData.data = this;
 
-    body.shapes.at(0).material.density = .5;
+    body.shapes.at(0).material.density = 0.5;
     body.shapes.at(0).material.dynamicFriction = 0;
-  }
 
-  public function onCollide()
-  {
-    body.shapes.pop();
-    animation.frameIndex += 7;
+    emitter = new FlxEmitterExt(0, 0, 10);
+
+    // Now it's almost ready to use, but first we need to give it some pixels to spit out!
+    // Lets fill the emitter with some white pixels
+    for (i in 0...(Std.int(emitter.maxSize / 2)))
+    {
+      var _whitePixel = new FlxParticle();
+      _whitePixel.makeGraphic(3, 3, FlxColor.RED);
+      // Make sure the particle doesn't show up at (0, 0)
+      _whitePixel.visible = false;
+      emitter.add(_whitePixel);
+      _whitePixel = new FlxParticle();
+      _whitePixel.makeGraphic(5, 5, FlxColor.RED);
+      _whitePixel.visible = false;
+      emitter.add(_whitePixel);
+    }
+
+    emitter.angle = Math.PI/2;
+    emitter.angleRange = 0.15;
+    emitter.setAlpha(1, 1, 0, 0);
+
   }
 
 }
