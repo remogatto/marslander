@@ -87,18 +87,6 @@ class PlayState extends FlxNapeState
   {
     super.update();
 
-    FlxG.watch.add(_lander, "x");
-    FlxG.watch.addQuick("Screen widthx2", FlxG.width*2);
-
-    var flame = new Vec2(0, 16);
-    var midpoint = _lander.getGraphicMidpoint();
-    flame.rotate(FlxAngle.asRadians(_lander.angle));
-
-    flame = flame.add(new Vec2(midpoint.x, midpoint.y));
-    _lander.emitter.setPosition(flame.x, flame.y);
-    _lander.emitter.angle = FlxAngle.asRadians(90+_lander.angle);
-
-
     if (_lander.x > _deadZoneRight || _lander.x < _deadZoneLeft)
     {
       FlxG.camera.target = null;
@@ -136,11 +124,11 @@ class PlayState extends FlxNapeState
       var v = new Vec2(0, -3);
       v.rotate(_lander.body.rotation);
       _lander.body.applyImpulse(v);
-      _lander.emitter.start(false, 0.3, 0.01);
+      _lander.startEngine();
     }
 
     if (FlxG.keys.justReleased.SPACE || FlxG.mouse.justReleased) {
-      _lander.emitter.start(false, 100, 100);
+      _lander.stopEngine();
     }
 
     if (FlxG.keys.pressed.RIGHT) {
@@ -154,7 +142,7 @@ class PlayState extends FlxNapeState
     #if mobile
     if (FlxG.accelerometer.isSupported)
     {
-      lander.body.rotation = -Math.ceil(FlxG.accelerometer.x*10)/10;
+      _lander.body.rotation = -Math.ceil(FlxG.accelerometer.x*100)/100;
     }
     #end
 

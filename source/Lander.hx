@@ -4,13 +4,16 @@ import flixel.effects.particles.FlxEmitterExt;
 import flixel.effects.particles.FlxParticle;
 import flixel.util.FlxRandom;
 import flixel.util.FlxColor;
+import flixel.util.FlxAngle;
 import flixel.addons.nape.FlxNapeSprite;
 import nape.shape.Polygon;
 import nape.phys.Material;
+import nape.geom.Vec2;
 
 class Lander extends FlxNapeSprite
 {
   public var emitter:FlxEmitterExt;
+
   public function new(X:Int, Y:Int)
   {
     super(X, Y);
@@ -55,4 +58,20 @@ class Lander extends FlxNapeSprite
 
   }
 
+  public function startEngine()
+  {
+    var flame = new Vec2(0, 16);
+    var midpoint = getGraphicMidpoint();
+    flame.rotate(FlxAngle.asRadians(angle));
+
+    flame = flame.add(new Vec2(midpoint.x, midpoint.y));
+    emitter.setPosition(flame.x, flame.y);
+    emitter.angle = FlxAngle.asRadians(angle+90);
+    emitter.start(false, 0.3, 0.01);
+  }
+
+  public function stopEngine()
+  {
+    emitter.start(false, 100, 100);
+  }
 }
