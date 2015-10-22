@@ -13,6 +13,7 @@ import flixel.util.FlxColor;
 import flixel.util.FlxRandom;
 import flixel.util.FlxAngle;
 import flixel.util.FlxPoint;
+import flixel.util.FlxRect;
 import flixel.FlxCamera;
 import flixel.effects.particles.FlxEmitterExt;
 import flixel.effects.particles.FlxParticle;
@@ -32,11 +33,17 @@ class PlayState extends FlxNapeState
 {
   public static inline var TERRAIN_ITERATIONS = 6;
   public static inline var TERRAIN_ROUGHNESS = 0.6;
-  var terrain:Terrain;
-  var lander:Lander;
-  var followCamera:FlxCamera;
-  var defCamera:FlxCamera;
-  var follow:Bool = false;
+  public static inline var CAMERA_LANDSCAPE = 0;
+  public static inline var CAMERA_LANDING = 1;
+  public static inline var NUM_OF_ZONES = 3;
+  private var _terrain:Terrain;
+  private var _lander:Lander;
+  private var _landscapeCamera:FlxCamera;
+  private var _follow:Bool = false;
+  private var _worldW:Int;
+  private var _worldH:Int;
+  private var _deadZoneRight:Float;
+  private var _deadZoneLeft:Float;
 
   /**
   * Function that is called up when to state is created to set it up.
@@ -47,18 +54,21 @@ class PlayState extends FlxNapeState
 
     FlxNapeState.space.gravity.setxy(0, 50);
     napeDebugEnabled = false;
-    createWalls(0, -1000, FlxG.width*3, FlxG.height);
 
-    terrain = createTerrain(FlxG.width*3, FlxG.height);
-    lander = createLander(Std.int(FlxG.width/2), 0);
+    _worldW = FlxG.width*NUM_OF_ZONES;
+    _worldH = FlxG.height*NUM_OF_ZONES;
+    _deadZoneRight = _worldW - FlxG.width/2;
+    _deadZoneLeft = FlxG.width/2;
+    _terrain = createTerrain(_worldW, _worldH);
+    _lander = createLander(Std.int(_worldW/2), 0);
 
-    for (l in terrain.landingSites)
+    for (l in _terrain.landingSites)
     {
       var text = new FlxText(l.a.x, l.a.y+5, "2x");
       add(text);
     }
 
-    FlxG.camera.follow(lander, FlxCamera.STYLE_TOPDOWN, 1);
+    switchCamera(CAMERA_LANDSCAPE);
   }
 
   /**
@@ -77,28 +87,38 @@ class PlayState extends FlxNapeState
   {
     super.update();
 
+    FlxG.watch.add(_lander, "x");
+    FlxG.watch.addQuick("Screen widthx2", FlxG.width*2);
+
     var flame = new Vec2(0, 16);
-    var midpoint = lander.getGraphicMidpoint();
-    flame.rotate(FlxAngle.asRadians(lander.angle));
+    var midpoint = _lander.getGraphicMidpoint();
+    flame.rotate(FlxAngle.asRadians(_lander.angle));
 
     flame = flame.add(new Vec2(midpoint.x, midpoint.y));
-    lander.emitter.setPosition(flame.x, flame.y);
-    lander.emitter.angle = FlxAngle.asRadians(90+lander.angle);
+    _lander.emitter.setPosition(flame.x, flame.y);
+    _lander.emitter.angle = FlxAngle.asRadians(90+_lander.angle);
 
 
-    for (l in terrain.landingSites) {
-      if (l.a.y-lander.y < 100) {
-        if (!follow) {
-          followCamera = new FlxZoomCamera(Std.int(FlxG.camera.x), Std.int(FlxG.camera.y), Std.int(FlxG.camera.width), Std.int(FlxG.camera.height), 2);
-          followCamera.follow(lander, FlxCamera.STYLE_TOPDOWN, null, 5);
-          FlxG.cameras.reset(followCamera);
-          follow = true;
+    if (_lander.x > _deadZoneRight || _lander.x < _deadZoneLeft)
+    {
+      FlxG.camera.target = null;
+    }
+    else
+    {
+      FlxG.camera.target = _lander;
+    }
+
+    for (l in _terrain.landingSites) {
+      if (_lander.x > l.a.x && _lander.x < l.b.x && l.a.y-_lander.y < 100) {
+        if (!_follow) {
+          switchCamera(CAMERA_LANDING);
+          _follow = true;
         }
       }
       else {
-        if (follow) {
-          FlxG.cameras.reset();
-          follow = false;
+        if (_follow) {
+          switchCamera(CAMERA_LANDSCAPE);
+          _follow = false;
         }
       }
     }
@@ -114,21 +134,21 @@ class PlayState extends FlxNapeState
 
     if (FlxG.keys.pressed.SPACE || FlxG.mouse.pressed) {
       var v = new Vec2(0, -3);
-      v.rotate(lander.body.rotation);
-      lander.body.applyImpulse(v);
-      lander.emitter.start(false, 0.3, 0.01);
+      v.rotate(_lander.body.rotation);
+      _lander.body.applyImpulse(v);
+      _lander.emitter.start(false, 0.3, 0.01);
     }
 
     if (FlxG.keys.justReleased.SPACE || FlxG.mouse.justReleased) {
-      lander.emitter.start(false, 100, 100);
+      _lander.emitter.start(false, 100, 100);
     }
 
     if (FlxG.keys.pressed.RIGHT) {
-      lander.body.rotation += 0.1;
+      _lander.body.rotation += 0.1;
     }
 
     if (FlxG.keys.pressed.LEFT) {
-      lander.body.rotation -= 0.1;
+      _lander.body.rotation -= 0.1;
     }
 
     #if mobile
@@ -151,6 +171,19 @@ class PlayState extends FlxNapeState
     var terrain = new Terrain(FlxG.width*3, FlxG.height, TERRAIN_ROUGHNESS, TERRAIN_ITERATIONS);
     add(terrain.sprite);
     return terrain;
+  }
+
+  function switchCamera(cameraType:Int) {
+    switch(cameraType) {
+    case CAMERA_LANDSCAPE:
+      var landscapeCamera = new FlxCamera(0, 0, Std.int(FlxG.camera.width), Std.int(FlxG.camera.height));
+      landscapeCamera.follow(_lander, FlxCamera.STYLE_PLATFORMER);
+      FlxG.cameras.reset(landscapeCamera);
+    case CAMERA_LANDING:
+      var followCamera = new FlxZoomCamera(Std.int(FlxG.camera.x), Std.int(FlxG.camera.y), Std.int(FlxG.camera.width), Std.int(FlxG.camera.height), 2);
+      followCamera.follow(_lander, FlxCamera.STYLE_TOPDOWN);
+      FlxG.cameras.reset(followCamera);
+    }
   }
 
 }
