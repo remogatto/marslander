@@ -1,8 +1,10 @@
 package;
 
+import openfl.Lib;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.FlxState;
+import flixel.group.FlxGroup;
 import flixel.text.FlxText;
 import flixel.util.FlxMath;
 import flixel.addons.nape.FlxNapeState;
@@ -38,6 +40,7 @@ class PlayState extends FlxNapeState
   public static inline var NUM_OF_ZONES = 3;
   private var _terrain:Terrain;
   private var _lander:Lander;
+  private var _hud:HUD;
   private var _landscapeCamera:FlxCamera;
   private var _follow:Bool = false;
   private var _worldW:Int;
@@ -67,6 +70,9 @@ class PlayState extends FlxNapeState
       var text = new FlxText(l.a.x, l.a.y+5, "2x");
       add(text);
     }
+
+    _hud = new HUD();
+    add(_hud);
 
     switchCamera(CAMERA_LANDSCAPE);
   }
@@ -161,16 +167,26 @@ class PlayState extends FlxNapeState
     return terrain;
   }
 
+  function createHUDCamera():FlxCamera
+  {
+    // FIXME: camera should be tall as _hud.background.height
+    var hudCam = new FlxCamera(0, 0, Std.int(Lib.current.stage.width), 100);
+    hudCam.follow(_hud.background);
+    return hudCam;
+  }
+
   function switchCamera(cameraType:Int) {
     switch(cameraType) {
     case CAMERA_LANDSCAPE:
       var landscapeCamera = new FlxCamera(0, 0, Std.int(FlxG.camera.width), Std.int(FlxG.camera.height));
       landscapeCamera.follow(_lander, FlxCamera.STYLE_PLATFORMER);
       FlxG.cameras.reset(landscapeCamera);
+      FlxG.cameras.add(createHUDCamera());
     case CAMERA_LANDING:
-      var followCamera = new FlxZoomCamera(Std.int(FlxG.camera.x), Std.int(FlxG.camera.y), Std.int(FlxG.camera.width), Std.int(FlxG.camera.height), 2);
+      var followCamera = new FlxZoomCamera(0, 0, Std.int(FlxG.camera.width), Std.int(FlxG.camera.height), 2);
       followCamera.follow(_lander, FlxCamera.STYLE_TOPDOWN);
       FlxG.cameras.reset(followCamera);
+      FlxG.cameras.add(createHUDCamera());
     }
   }
 
