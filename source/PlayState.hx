@@ -16,6 +16,7 @@ import flixel.util.FlxRandom;
 import flixel.util.FlxAngle;
 import flixel.util.FlxPoint;
 import flixel.util.FlxRect;
+import flixel.util.FlxTimer;
 import flixel.FlxCamera;
 import flixel.effects.particles.FlxEmitterExt;
 import flixel.effects.particles.FlxParticle;
@@ -47,6 +48,9 @@ class PlayState extends FlxNapeState
   private var _worldH:Int;
   private var _deadZoneRight:Float;
   private var _deadZoneLeft:Float;
+  private var _deadZoneTop:Float;
+  private var _countDownTimer:FlxTimer;
+  private var _initialTime = 60;
 
   /**
   * Function that is called up when to state is created to set it up.
@@ -58,23 +62,29 @@ class PlayState extends FlxNapeState
     FlxNapeState.space.gravity.setxy(0, 50);
     napeDebugEnabled = false;
 
+    positionIterations = 6;
+    velocityIterations = 2;
+
     _worldW = FlxG.width*NUM_OF_ZONES;
     _worldH = FlxG.height*NUM_OF_ZONES;
     _deadZoneRight = _worldW - FlxG.width/2;
     _deadZoneLeft = FlxG.width/2;
+    _deadZoneTop = 0;
     _terrain = createTerrain(_worldW, _worldH);
-    _lander = createLander(Std.int(_worldW/2), 0);
+    _lander = createLander(Std.int(_worldW/2), 20);
 
     for (l in _terrain.landingSites)
     {
-      var text = new FlxText(l.a.x, l.a.y+5, "2x");
+      var text = new FlxText(l.a.x, l.a.y+5, "Landing site");
       add(text);
     }
 
     _hud = new HUD();
     add(_hud);
+    _hud.updateHUD(_initialTime);
 
     switchCamera(CAMERA_LANDSCAPE);
+    _countDownTimer = new FlxTimer(1, onCountDown, 0);
   }
 
   /**
@@ -93,7 +103,12 @@ class PlayState extends FlxNapeState
   {
     super.update();
 
-    if (_lander.x > _deadZoneRight || _lander.x < _deadZoneLeft)
+    if (_initialTime <= 0)
+    {
+      FlxG.resetGame();
+    }
+
+    if (_lander.x > _deadZoneRight || _lander.x < _deadZoneLeft || _lander.y < _deadZoneTop)
     {
       FlxG.camera.target = null;
     }
@@ -130,7 +145,10 @@ class PlayState extends FlxNapeState
       var v = new Vec2(0, -3);
       v.rotate(_lander.body.rotation);
       _lander.body.applyImpulse(v);
-      _lander.startEngine();
+      if (!_lander.mainEngineOn)
+      {
+        _lander.startEngine();
+      }
     }
 
     if (FlxG.keys.justReleased.SPACE || FlxG.mouse.justReleased) {
@@ -144,11 +162,18 @@ class PlayState extends FlxNapeState
     if (FlxG.keys.pressed.LEFT) {
       _lander.body.rotation -= 0.1;
     }
-
     #if mobile
     if (FlxG.accelerometer.isSupported)
     {
-      _lander.body.rotation = -Math.ceil(FlxG.accelerometer.x*100)/100;
+      // trace(Math.ceil(FlxG.accelerometer.x*100)/100, Math.ceil(FlxG.accelerometer.y*100)/100, Math.ceil(FlxG.accelerometer.z*100)/100);
+      if (FlxG.accelerometer.x > 0)
+      {
+        _lander.body.rotation = Math.ceil(FlxG.accelerometer.y*100)/100*1.5;
+      }
+      else
+      {
+        _lander.body.rotation = -Math.ceil(FlxG.accelerometer.y*100)/100*1.5;
+      }
     }
     #end
 
@@ -170,8 +195,9 @@ class PlayState extends FlxNapeState
   function createHUDCamera():FlxCamera
   {
     // FIXME: camera should be tall as _hud.background.height
-    var hudCam = new FlxCamera(0, 0, Std.int(Lib.current.stage.width), 100);
+    var hudCam = new FlxCamera(0, 0, Std.int(Lib.current.stage.width), 80);
     hudCam.follow(_hud.background);
+    hudCam.alpha = 0.5;
     return hudCam;
   }
 
@@ -188,6 +214,12 @@ class PlayState extends FlxNapeState
       FlxG.cameras.reset(followCamera);
       FlxG.cameras.add(createHUDCamera());
     }
+  }
+
+  function onCountDown(timer:FlxTimer)
+  {
+    _initialTime -= 1;
+    _hud.updateHUD(_initialTime);
   }
 
 }

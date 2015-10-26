@@ -13,6 +13,7 @@ import nape.geom.Vec2;
 class Lander extends FlxNapeSprite
 {
   public var emitter:FlxEmitterExt;
+  public var mainEngineOn:Bool;
 
   public function new(X:Int, Y:Int)
   {
@@ -58,20 +59,27 @@ class Lander extends FlxNapeSprite
 
   }
 
+  override public function update()
+  {
+      super.update();
+      var flame = new Vec2(0, 16);
+      var midpoint = getGraphicMidpoint();
+      flame.rotate(FlxAngle.asRadians(angle));
+
+      flame = flame.add(new Vec2(midpoint.x, midpoint.y));
+      emitter.setPosition(flame.x, flame.y);
+      emitter.angle = FlxAngle.asRadians(angle+90);
+  }
+
   public function startEngine()
   {
-    var flame = new Vec2(0, 16);
-    var midpoint = getGraphicMidpoint();
-    flame.rotate(FlxAngle.asRadians(angle));
-
-    flame = flame.add(new Vec2(midpoint.x, midpoint.y));
-    emitter.setPosition(flame.x, flame.y);
-    emitter.angle = FlxAngle.asRadians(angle+90);
+    mainEngineOn = true;
     emitter.start(false, 0.3, 0.01);
   }
 
   public function stopEngine()
   {
+    mainEngineOn = false;
     emitter.start(false, 100, 100);
   }
 }
