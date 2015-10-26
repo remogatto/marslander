@@ -73,12 +73,6 @@ class PlayState extends FlxNapeState
     _terrain = createTerrain(_worldW, _worldH);
     _lander = createLander(Std.int(_worldW/2), 20);
 
-    for (l in _terrain.landingSites)
-    {
-      var text = new FlxText(l.a.x, l.a.y+5, "Landing site");
-      add(text);
-    }
-
     _hud = new HUD();
     add(_hud);
     _hud.updateHUD(_initialTime);

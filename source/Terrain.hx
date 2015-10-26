@@ -52,7 +52,7 @@ class Terrain
     va.push(new Vec2(width, height));
     va.push(new Vec2(0, height));
 
-    landingSites = generateLandingSites(va, iterations);
+    landingSites = generateLandingSites(va, 4);
 
     var vl = new Vec2List();
     vl = Vec2List.fromArray(va);
@@ -78,17 +78,25 @@ class Terrain
       FlxSpriteUtil.drawLine(sprite, v1.x, v1.y, v2.x, v2.y, {color: FlxColor.WHITE, thickness: 2});
     }
 
+    for (l in landingSites)
+    {
+      FlxSpriteUtil.drawLine(sprite, l.a.x, l.a.y, l.b.x, l.b.y, {color: FlxColor.RED, thickness: 2});
+    }
+
   }
 
   function generate(x0:Int, y0:Int, x1:Int, y1:Int, displacement:Float, ?roughness:Float = 0.6, ?iterations:Int = 6):Array<Vec2>
   {
     var points:Array<Vec2> = new Array<Vec2>();
     var temp:Array<Vec2> = new Array<Vec2>();
+    var dx = Math.abs(x1-x0)/64;
+
+    iterations = Math.ceil(Math.log(dx)/Math.log(2));
 
     points.push(new Vec2(x0, y0));
     points.push(new Vec2(x1, y1));
 
-    for (i in 0...iterations-1) {
+    for (i in 0...iterations) {
       temp = new Array<Vec2>();
       var j = 0;
       while (j < points.length - 1) {
@@ -104,20 +112,33 @@ class Terrain
       displacement *= roughness;
       points = temp;
     }
+    // trace(dx, iterations, points[1].x-points[0].x, points.length);
     return points;
   }
 
-  function generateLandingSites(points:Array<Vec2>, iterations:Int):Array<LandingSite>
+  function generateLandingSites(points:Array<Vec2>, ?n:Int):Array<LandingSite>
   {
     var landingSites = new Array<LandingSite>();
-    var width = points.length;
-    var lId0 = FlxRandom.intRanged(5, points.length-5);
-    var lId1 = lId0+iterations-2;
-    var ly = points[lId0].y;
-    for (i in 0...iterations-1) {
-      points[lId0+i].y = ly;
+    var padding = 10;
+    var id:Int = 0;
+
+    for (i in 0...n-1)
+    {
+      id = FlxRandom.intRanged(id+padding, points.length-padding);
+      var difficulty = FlxRandom.intRanged(1, 3);
+      if (id < points.length && id+difficulty < points.length)
+      {
+        var id1 = id + difficulty;
+        var p0 = points[id];
+        var p1 = new Vec2(points[id1].x, p0.y);
+        for (j in id+1...id1+1)
+        {
+            points[j].y = p0.y;
+        }
+        landingSites.push(new LandingSite(p0.x, p0.y, p1.x, p1.y));
+      }
     }
-    landingSites.push(new LandingSite(points[lId0].x, points[lId0].y, points[lId1].x, points[lId1].y));
+
     return landingSites;
   }
 
