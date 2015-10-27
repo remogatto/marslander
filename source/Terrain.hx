@@ -112,7 +112,7 @@ class Terrain
       displacement *= roughness;
       points = temp;
     }
-    // trace(dx, iterations, points[1].x-points[0].x, points.length);
+
     return points;
   }
 
@@ -121,14 +121,15 @@ class Terrain
     var landingSites = new Array<LandingSite>();
     var padding = 10;
     var id:Int = 0;
+    var id1:Int = 0;
 
-    for (i in 0...n-1)
+    for (i in 0...n)
     {
       id = FlxRandom.intRanged(id+padding, points.length-padding);
       var difficulty = FlxRandom.intRanged(1, 3);
       if (id < points.length && id+difficulty < points.length)
       {
-        var id1 = id + difficulty;
+        id1 = id + difficulty;
         var p0 = points[id];
         var p1 = new Vec2(points[id1].x, p0.y);
         for (j in id+1...id1+1)

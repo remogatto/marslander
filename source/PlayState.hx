@@ -51,6 +51,7 @@ class PlayState extends FlxNapeState
   private var _deadZoneTop:Float;
   private var _countDownTimer:FlxTimer;
   private var _initialTime = 60;
+  private var _currentCameraType = -1;
 
   /**
   * Function that is called up when to state is created to set it up.
@@ -58,6 +59,8 @@ class PlayState extends FlxNapeState
   override public function create():Void
   {
     super.create();
+
+    FlxRandom.resetGlobalSeed();
 
     FlxNapeState.space.gravity.setxy(0, 50);
     napeDebugEnabled = false;
@@ -71,14 +74,16 @@ class PlayState extends FlxNapeState
     _deadZoneLeft = FlxG.width/2;
     _deadZoneTop = 0;
     _terrain = createTerrain(_worldW, _worldH);
+
     _lander = createLander(Std.int(_worldW/2), 20);
 
     _hud = new HUD();
     add(_hud);
-    _hud.updateHUD(_initialTime);
+    _hud.updateTime(_initialTime);
 
     switchCamera(CAMERA_LANDSCAPE);
     _countDownTimer = new FlxTimer(1, onCountDown, 0);
+
   }
 
   /**
@@ -113,16 +118,11 @@ class PlayState extends FlxNapeState
 
     for (l in _terrain.landingSites) {
       if (_lander.x > l.a.x && _lander.x < l.b.x && l.a.y-_lander.y < 100) {
-        if (!_follow) {
-          switchCamera(CAMERA_LANDING);
-          _follow = true;
-        }
+        switchCamera(CAMERA_LANDING);
+        break;
       }
       else {
-        if (_follow) {
-          switchCamera(CAMERA_LANDSCAPE);
-          _follow = false;
-        }
+        switchCamera(CAMERA_LANDSCAPE);
       }
     }
 
@@ -159,7 +159,6 @@ class PlayState extends FlxNapeState
     #if mobile
     if (FlxG.accelerometer.isSupported)
     {
-      // trace(Math.ceil(FlxG.accelerometer.x*100)/100, Math.ceil(FlxG.accelerometer.y*100)/100, Math.ceil(FlxG.accelerometer.z*100)/100);
       if (FlxG.accelerometer.x > 0)
       {
         _lander.body.rotation = Math.ceil(FlxG.accelerometer.y*100)/100*1.5;
@@ -196,24 +195,32 @@ class PlayState extends FlxNapeState
   }
 
   function switchCamera(cameraType:Int) {
-    switch(cameraType) {
-    case CAMERA_LANDSCAPE:
-      var landscapeCamera = new FlxCamera(0, 0, Std.int(FlxG.camera.width), Std.int(FlxG.camera.height));
-      landscapeCamera.follow(_lander, FlxCamera.STYLE_PLATFORMER);
-      FlxG.cameras.reset(landscapeCamera);
-      FlxG.cameras.add(createHUDCamera());
-    case CAMERA_LANDING:
-      var followCamera = new FlxZoomCamera(0, 0, Std.int(FlxG.camera.width), Std.int(FlxG.camera.height), 2);
-      followCamera.follow(_lander, FlxCamera.STYLE_TOPDOWN);
-      FlxG.cameras.reset(followCamera);
-      FlxG.cameras.add(createHUDCamera());
+    if (_currentCameraType != cameraType)
+    {
+      switch(cameraType) {
+      case CAMERA_LANDSCAPE:
+        var landscapeCamera = new FlxCamera(0, 0, Std.int(FlxG.camera.width), Std.int(FlxG.camera.height));
+        landscapeCamera.follow(_lander, FlxCamera.STYLE_PLATFORMER);
+        FlxG.cameras.reset(landscapeCamera);
+        FlxG.cameras.add(createHUDCamera());
+      case CAMERA_LANDING:
+        var followCamera = new FlxZoomCamera(0, 0, Std.int(FlxG.camera.width), Std.int(FlxG.camera.height), 3);
+        followCamera.follow(_lander, FlxCamera.STYLE_TOPDOWN);
+        FlxG.cameras.reset(followCamera);
+        FlxG.cameras.add(createHUDCamera());
+      }
     }
+    else
+    {
+      return;
+    }
+    _currentCameraType = cameraType;
   }
 
   function onCountDown(timer:FlxTimer)
   {
     _initialTime -= 1;
-    _hud.updateHUD(_initialTime);
+    _hud.updateTime(_initialTime);
   }
 
 }
