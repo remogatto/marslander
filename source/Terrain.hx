@@ -46,9 +46,9 @@ class Terrain
     var material = new Material(0.4, 0.2, 0.38, 0.7);
     var va = new Array<Vec2>();
 
-    va = generate(0, height, Std.int(width/2), height, height/3, roughness, iterations);
+    va = generate(0, height, Std.int(width/2), height, height/3, roughness);
     va.pop();
-    va = va.concat(generate(Std.int(width/2), height-10, width, height, height/2, roughness, iterations));
+    va = va.concat(generate(Std.int(width/2), height-10, width, height, height/2, roughness));
     va.push(new Vec2(width, height));
     va.push(new Vec2(0, height));
 
@@ -85,13 +85,12 @@ class Terrain
 
   }
 
-  function generate(x0:Int, y0:Int, x1:Int, y1:Int, displacement:Float, ?roughness:Float = 0.6, ?iterations:Int = 6):Array<Vec2>
+  function generate(x0:Int, y0:Int, x1:Int, y1:Int, displacement:Float, ?roughness:Float = 0.6):Array<Vec2>
   {
     var points:Array<Vec2> = new Array<Vec2>();
     var temp:Array<Vec2> = new Array<Vec2>();
     var dx = Math.abs(x1-x0)/64;
-
-    iterations = Math.ceil(Math.log(dx)/Math.log(2));
+    var iterations = Math.ceil(Math.log(dx)/Math.log(2));
 
     points.push(new Vec2(x0, y0));
     points.push(new Vec2(x1, y1));
@@ -125,19 +124,16 @@ class Terrain
 
     for (i in 0...n)
     {
-      id = FlxRandom.intRanged(id+padding, points.length-padding);
+      id = FlxRandom.intRanged(padding, points.length-padding);
       var difficulty = FlxRandom.intRanged(1, 3);
-      if (id < points.length && id+difficulty < points.length)
+      id1 = id + difficulty;
+      var p0 = points[id];
+      var p1 = new Vec2(points[id1].x, p0.y);
+      for (j in id+1...id1+1)
       {
-        id1 = id + difficulty;
-        var p0 = points[id];
-        var p1 = new Vec2(points[id1].x, p0.y);
-        for (j in id+1...id1+1)
-        {
-            points[j].y = p0.y;
-        }
-        landingSites.push(new LandingSite(p0.x, p0.y, p1.x, p1.y));
+        points[j].y = p0.y;
       }
+      landingSites.push(new LandingSite(p0.x, p0.y, p1.x, p1.y));
     }
 
     return landingSites;

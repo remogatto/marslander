@@ -1,14 +1,15 @@
 package;
 
+import Sys;
 import openfl.Lib;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.FlxState;
 import flixel.group.FlxGroup;
 import flixel.text.FlxText;
-import flixel.util.FlxMath;
 import flixel.addons.nape.FlxNapeState;
 import flixel.addons.display.FlxZoomCamera;
+import flixel.util.FlxMath;
 import flixel.util.FlxRandom;
 import flixel.util.FlxSpriteUtil;
 import flixel.util.FlxColor;
@@ -34,10 +35,7 @@ import nape.phys.Material;
 */
 class PlayState extends FlxNapeState
 {
-  public static inline var TERRAIN_ITERATIONS = 6;
-  public static inline var TERRAIN_ROUGHNESS = 0.6;
-  public static inline var CAMERA_LANDSCAPE = 0;
-  public static inline var CAMERA_LANDING = 1;
+  public static inline var TERRAIN_ROUGHNESS = 0.7;
   public static inline var NUM_OF_ZONES = 3;
   private var _terrain:Terrain;
   private var _lander:Lander;
@@ -81,9 +79,11 @@ class PlayState extends FlxNapeState
     add(_hud);
     _hud.updateTime(_initialTime);
 
-    switchCamera(CAMERA_LANDSCAPE);
-    _countDownTimer = new FlxTimer(1, onCountDown, 0);
+    var followCamera = new FlxZoomCamera(0, 0, Std.int(FlxG.camera.width), Std.int(FlxG.camera.height), 1);
+    FlxG.cameras.reset(followCamera);
+    FlxG.camera.follow(_lander, FlxCamera.STYLE_TOPDOWN);
 
+    _countDownTimer = new FlxTimer(1, onCountDown, 0);
   }
 
   /**
@@ -118,11 +118,12 @@ class PlayState extends FlxNapeState
 
     for (l in _terrain.landingSites) {
       if (_lander.x > l.a.x && _lander.x < l.b.x && l.a.y-_lander.y < 100) {
-        switchCamera(CAMERA_LANDING);
+        FlxG.camera.target = _lander;
+        FlxG.camera.zoom = 2;
         break;
       }
       else {
-        switchCamera(CAMERA_LANDSCAPE);
+        FlxG.camera.zoom = 1;
       }
     }
 
@@ -133,6 +134,10 @@ class PlayState extends FlxNapeState
 
     if (FlxG.keys.justPressed.R) {
       FlxG.resetState();
+    }
+
+    if (FlxG.keys.justPressed.Q) {
+      Sys.exit(0);
     }
 
     if (FlxG.keys.pressed.SPACE || FlxG.mouse.pressed) {
@@ -180,7 +185,7 @@ class PlayState extends FlxNapeState
   }
 
   function createTerrain(width:Int, height:Int):Terrain {
-    var terrain = new Terrain(FlxG.width*3, FlxG.height, TERRAIN_ROUGHNESS, TERRAIN_ITERATIONS);
+    var terrain = new Terrain(FlxG.width*3, FlxG.height, TERRAIN_ROUGHNESS);
     add(terrain.sprite);
     return terrain;
   }
@@ -192,29 +197,6 @@ class PlayState extends FlxNapeState
     hudCam.follow(_hud.background);
     hudCam.alpha = 0.5;
     return hudCam;
-  }
-
-  function switchCamera(cameraType:Int) {
-    if (_currentCameraType != cameraType)
-    {
-      switch(cameraType) {
-      case CAMERA_LANDSCAPE:
-        var landscapeCamera = new FlxCamera(0, 0, Std.int(FlxG.camera.width), Std.int(FlxG.camera.height));
-        landscapeCamera.follow(_lander, FlxCamera.STYLE_PLATFORMER);
-        FlxG.cameras.reset(landscapeCamera);
-        FlxG.cameras.add(createHUDCamera());
-      case CAMERA_LANDING:
-        var followCamera = new FlxZoomCamera(0, 0, Std.int(FlxG.camera.width), Std.int(FlxG.camera.height), 3);
-        followCamera.follow(_lander, FlxCamera.STYLE_TOPDOWN);
-        FlxG.cameras.reset(followCamera);
-        FlxG.cameras.add(createHUDCamera());
-      }
-    }
-    else
-    {
-      return;
-    }
-    _currentCameraType = cameraType;
   }
 
   function onCountDown(timer:FlxTimer)

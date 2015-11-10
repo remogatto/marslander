@@ -31,7 +31,6 @@ class Lander extends FlxNapeSprite
     box.filter.collisionGroup = 256;
 
     body.shapes.add(box);
-    // body.userData.data = this;
 
     body.shapes.at(0).material.density = 0.5;
     body.shapes.at(0).material.dynamicFriction = 0;
